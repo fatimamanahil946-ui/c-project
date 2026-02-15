@@ -1,0 +1,169 @@
+#include "graphics.h"
+#include <stdlib.h>
+#include <time.h>
+#include <conio.h>
+
+void drawCircle(int x, int y, int radius, int color) {
+    setfillstyle(SOLID_FILL, color);
+    setcolor(color);
+    fillellipse(x, y, radius, radius);
+}
+
+void initPositions(int x[][80], int y[][80], int dx[][80], int dy[][80]) {
+    for (int i = 0; i < 100; i++) {
+        for (int j = 0; j < 80; j++) {
+            x[i][j] = rand() % (1002 - 2) + 2;
+            y[i][j] = rand() % (697 - 50) + 50;
+
+            dx[i][j] = -3 + rand() % 7;
+            dy[i][j] = -3 + rand() % 7;
+        }
+    }
+}
+
+int main() {
+    srand(time(NULL));
+    initwindow(1300, 1200, "Infection Simulation", 0, 0, true);
+setbkcolor(BLACK);
+    int x_positions[100][80], y_positions[100][80];
+    int gdx[100][80], gdy[100][80];
+    int infected[100][80] = {0};
+
+    int rx[200][2], ry[200][2];
+    int rdx[200][2], rdy[200][2];
+    int redCount = 0;
+    clock_t contactStart[100][80]={0};
+    initPositions(x_positions, y_positions, gdx, gdy);
+
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 20; j++) {
+            rx[redCount][0] = rand() % (1002 - 2) + 2;
+            ry[redCount][0] = rand() % (697 - 50) + 50;
+            rdx[redCount][0] = -2 + rand() % 5;
+            if(rdx[redCount][0]==0)
+                rdx[redCount][0]=1;
+
+            rdy[redCount][0] = -2 + rand() % 5;
+            if (rdy[redCount][0]==0)
+                rdy[redCount][0]=1;
+            redCount++;
+        }
+    }
+
+    int vicinityX = 10;
+    int vicinityY = 10;
+    int infectionDelay=3;
+
+    while (!kbhit()) {
+        cleardevice();
+
+        for (int i = 0; i < redCount; i++) {
+            rx[i][0] += rdx[i][0];
+            ry[i][0] += rdy[i][0];
+             if (rx[i][0] <= 5){
+                rx[i][0] = 5;
+              rdx[i][0] = -rdx[i][0];
+            }
+                if( rx[i][0] >= 1000){
+                rx[i][0] = 1000;
+                rdx[i][0] = -rdx[i][0];
+                }
+            if (ry[i][0] <= 53){
+                ry[i][0] = 53;
+            rdy[i][0] = -rdy[i][0];
+            }
+
+                if (ry[i][0] >= 695){
+                  ry[i][0] = 695;
+                rdy[i][0] = -rdy[i][0];
+                }
+
+            drawCircle(rx[i][0], ry[i][0], 4, RED);
+
+            }
+
+
+
+        for (int i = 0; i <40; i++) {
+            for (int j = 0; j <20; j++) {
+
+                x_positions[i][j] += gdx[i][j];
+                y_positions[i][j] += gdy[i][j];
+
+
+                   if (x_positions[i][j] <= 5){
+                x_positions[i][j] = 5;
+              gdx[i][j] = -gdx[i][j];
+            }
+                if( x_positions[i][j] >= 999){
+                x_positions[i][j] = 999;
+                gdx[i][j] = -gdx[i][j];
+                }
+                if (y_positions[i][j] <= 53){
+                y_positions[i][j] = 53;
+            gdy[i][j] = -gdy[i][j];
+            }
+                if (y_positions[i][j] >= 695){
+                  y_positions[i][j] = 695;
+                gdy[i][j] = -gdy[i][j];
+
+                }
+
+            int touching=0;
+            clock_t now=clock();
+
+               for (int r = 0; r < redCount ; r++) {
+                    if (x_positions[i][j] >= rx[r][0] - vicinityX &&
+                        x_positions[i][j] <= rx[r][0] + vicinityX &&
+                        y_positions[i][j] >= ry[r][0] - vicinityY &&
+                        y_positions[i][j] <= ry[r][0] + vicinityY) {
+                       touching=1;
+                        if (!infected[i][j]) {
+                                if (contactStart[i][j]==0)
+                                    contactStart[i][j]=now;
+
+                    double seconds=(double)(now-contactStart[i][j])/ CLOCKS_PER_SEC;
+                            if(seconds>=infectionDelay){
+                                infected[i][j]=1;
+
+                            if(redCount<200){
+                            rx[redCount][0] = x_positions[i][j];
+                            ry[redCount][0] = y_positions[i][j];
+                            rdx[redCount][0] = -2 + rand() % 5;
+                            if(rdx[redCount][0]==0)
+                                rdx[redCount][0]=1;
+                            rdy[redCount][0] = -2 + rand() % 5;
+                            if(rdy[redCount][0]==0)
+                                rdy[redCount][0]=1;
+
+                            redCount++;
+                                }
+                            }
+                    }
+                     break;
+
+                        }
+                    }
+
+
+                if (!infected[i][j] && !touching)
+                    contactStart[i][j]=0;
+
+                if (infected[i][j])
+                    drawCircle(x_positions[i][j], y_positions[i][j], 4, RED);
+                else
+                    drawCircle(x_positions[i][j], y_positions[i][j], 4, GREEN);
+            }
+        }
+
+        setcolor(WHITE);
+        rectangle(2, 50, 1002, 697);
+
+        delay(10);
+        swapbuffers();
+    }
+
+    getch();
+    closegraph();
+    return 0;
+}
